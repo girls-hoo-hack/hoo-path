@@ -1,4 +1,5 @@
 // components/MapView.tsx
+
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -6,6 +7,10 @@ import { getMapsLoader } from "@/lib/googleMaps";
 
 // --- Types ---
 export type Offender = { id: string; name: string; lat: number; lng: number };
+export type Coordinates = {
+  lat: number;
+  lng: number;
+};
 
 // --- Mock data: adjust as needed ---
 const MOCK_OFFENDERS: Offender[] = [
@@ -15,7 +20,18 @@ const MOCK_OFFENDERS: Offender[] = [
   { id: "o3", name: "Offender C", lat: 38.0338, lng: -78.515 },
 ];
 
-export default function MapView() {
+type MapViewProps = {
+  onMapClick: (coords: Coordinates) => void;
+  selectedCoords: Coordinates | null;
+  // --- ADDED: Callbacks to lift coordinates to parent ---
+  onOriginSelected: (coords: Coordinates) => void;
+  onDestinationSelected: (coords: Coordinates) => void;
+};
+
+export default function MapView({
+  onOriginSelected, // <-- Destructured
+  onDestinationSelected, // <-- Destructured
+}: MapViewProps) {
   const mapRef = useRef<HTMLDivElement | null>(null);
 
   // Google Maps objects/state
@@ -93,6 +109,11 @@ export default function MapView() {
         setMap(m);
         setStatus("maps loaded");
 
+        const offenderIcon = {
+          url: "/illustrations/image6.png", // Your image path
+          scaledSize: new google.maps.Size(60, 60),
+          anchor: new google.maps.Point(16, 32),
+        };
         // Markers + infowindow
         const iw = new google.maps.InfoWindow();
         MOCK_OFFENDERS.forEach((o) => {
@@ -100,6 +121,7 @@ export default function MapView() {
             position: { lat: o.lat, lng: o.lng },
             map: m,
             title: o.name,
+            icon: offenderIcon,
           });
           marker.addListener("click", () => {
             iw.setContent(
@@ -147,6 +169,16 @@ export default function MapView() {
             if (place?.place_id) {
               setOrigin(place.formatted_address || place.name || "");
               setOriginPlaceId(place.place_id);
+
+              // --- LIFT STATE UP ---
+              if (place.geometry?.location) {
+                const coords: Coordinates = {
+                  lat: place.geometry.location.lat(),
+                  lng: place.geometry.location.lng(),
+                };
+                onOriginSelected(coords); // Call parent function
+              }
+              // --- END ---
             }
           }
         );
@@ -157,6 +189,16 @@ export default function MapView() {
             if (place?.place_id) {
               setDestination(place.formatted_address || place.name || "");
               setDestinationPlaceId(place.place_id);
+
+              // --- LIFT STATE UP ---
+              if (place.geometry?.location) {
+                const coords: Coordinates = {
+                  lat: place.geometry.location.lat(),
+                  lng: place.geometry.location.lng(),
+                };
+                onDestinationSelected(coords); // Call parent function
+              }
+              // --- END ---
             }
           }
         );
@@ -194,7 +236,7 @@ export default function MapView() {
     })();
 
     return () => cleanup();
-  }, []);
+  }, [onOriginSelected, onDestinationSelected]); // <-- Add callbacks to dependency array
 
   // --- Route handler (find best safe route) ---
   const handleRoute = useCallback(async () => {
@@ -214,7 +256,7 @@ export default function MapView() {
         : destination;
 
       if (!originRequest || !destinationRequest) {
-        alert("Enter start and end");
+        alert("시작점과 도착점을 입력해주세요.");
         return;
       }
 
@@ -360,6 +402,19 @@ export default function MapView() {
             safe.sort((a, b) => a.lengthMeters - b.lengthMeters);
             renderer.setDirections(res);
             renderer.setRouteIndex(safe[0].index);
+
+            const finalRoute = res.routes[safe[0].index];
+            if (finalRoute && finalRoute.legs.length > 0) {
+              const startLoc = finalRoute.legs[0].start_location;
+              const endLoc = finalRoute.legs[0].end_location;
+              if (startLoc) {
+                onOriginSelected({ lat: startLoc.lat(), lng: startLoc.lng() });
+              }
+              if (endLoc) {
+                onDestinationSelected({ lat: endLoc.lat(), lng: endLoc.lng() });
+              }
+            }
+
             setRouteInfo({
               message: `choose a safe path (Route #${safe[0].index + 1}).`,
               details: [`estimated distance: ${fmt(safe[0].lengthMeters)}`],
@@ -486,7 +541,7 @@ export default function MapView() {
               chosenRouteIdx + 1
             }).`;
             infoDetails = [
-              `: ${fmt(safePick.length)}`,
+              `예상 거리: ${fmt(safePick.length)}`,
               `위험 반경 ${DANGER_ZONE_METERS}m 회피`,
             ];
           } else {
@@ -507,6 +562,19 @@ export default function MapView() {
 
           renderer.setDirections(chosenRes);
           renderer.setRouteIndex(chosenRouteIdx);
+
+          const finalRoute = chosenRes.routes[chosenRouteIdx];
+          if (finalRoute && finalRoute.legs.length > 0) {
+            const startLoc = finalRoute.legs[0].start_location;
+            const endLoc = finalRoute.legs[0].end_location;
+            if (startLoc) {
+              onOriginSelected({ lat: startLoc.lat(), lng: startLoc.lng() });
+            }
+            if (endLoc) {
+              onDestinationSelected({ lat: endLoc.lat(), lng: endLoc.lng() });
+            }
+          }
+
           drawDangerCirclesForRoute(chosenRes.routes[chosenRouteIdx]);
           setRouteInfo({ message: infoMsg, details: infoDetails });
         }
@@ -515,7 +583,16 @@ export default function MapView() {
       console.error(e);
       alert("경로 계산 중 오류가 발생했습니다.");
     }
-  }, [map, renderer, origin, destination, originPlaceId, destinationPlaceId]);
+  }, [
+    map,
+    renderer,
+    origin,
+    destination,
+    originPlaceId,
+    destinationPlaceId,
+    onOriginSelected,
+    onDestinationSelected,
+  ]);
 
   return (
     <div className="flex w-full flex-col gap-3">
@@ -548,9 +625,13 @@ export default function MapView() {
           Show Best Route
         </button>
       </div>
+
+      {/* 상태 표시 */}
       <div className="text-xs text-gray-500">
         status: {status} {error ? `— ${error}` : ""}
       </div>
+
+      {/* 경로 안내/위험 설명 */}
       {routeInfo && (
         <div className="rounded-lg border bg-amber-50 p-3 text-sm text-amber-900">
           <div className="font-medium">{routeInfo.message}</div>
@@ -561,6 +642,8 @@ export default function MapView() {
           </ul>
         </div>
       )}
+
+      {/* 지도 */}
       <div
         ref={mapRef}
         className="h-[70vh] w-full rounded-2xl border bg-white"
