@@ -1,10 +1,10 @@
 // app/page.tsx
-import Footer from "@/components/landing/Footer";
+import SafetyTools from "@/components/landing/SafetyTools";
 import Hero from "@/components/landing/Hero";
 import IconStrip from "@/components/landing/IconStrip";
 import Navbar from "@/components/landing/Navbar";
-import SafetyTools from "@/components/landing/SafetyTools";
-import WhySection from "@/components/landing/Whysection";
+import WhySection from "@/components/landing/WhySection";
+import Footer from "@/components/landing/Footer";
 
 export default function Landing() {
   return (

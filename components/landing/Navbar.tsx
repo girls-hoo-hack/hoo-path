@@ -21,6 +21,7 @@ export default function NavBar() {
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
+      // 스크롤 시 상단에 고정, 배경은 반투명 흰색 + 블러 효과
       className="w-full sticky top-0 left-0 z-50 bg-white/80 backdrop-blur-md"
     >
       <div className="mx-auto max-w-6xl px-4">

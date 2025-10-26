@@ -8,8 +8,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}
-      <Toaster richColors />
+      <body>
+        {children}
+        <Toaster richColors />
       </body>
     </html>
   );

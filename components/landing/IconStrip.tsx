@@ -69,6 +69,12 @@ export default function IconStrip() {
   return (
     <section className="w-full">
       <div className="mx-auto max-w-6xl px-4">
+        {/* [수정된 부분]
+          1. flex-wrap -> flex-nowrap (줄바꿈 방지)
+          2. justify-center -> justify-between (양쪽 끝으로 정렬)
+          3. gap- 제거 (그룹별로 처리)
+          4. py-2 sm:py-4 (이전 요청대로 간격 좁게 유지)
+        */}
         <div className="flex items-center justify-between px-2 flex-nowrap py-2 sm:py-4">
           {/* 그룹 1: 겹쳐진 5개의 아이콘 (왼쪽 정렬) */}
           {/*

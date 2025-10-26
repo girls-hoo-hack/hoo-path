@@ -11,7 +11,6 @@ export default function Footer() {
         <div className="space-y-6 text-center md:text-left">
           {/* CTA */}
           <div>
-            å{" "}
             <h3 className="text-2xl font-extrabold tracking-tight">
               Ready to walk safer?
             </h3>
