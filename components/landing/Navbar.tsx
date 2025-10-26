@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Image from "next/image";
+
 // Next.js 13+ App Router에서는 로고에 Image를 사용하는 것이 좋습니다.
 // import Image from "next/image";
 
@@ -32,7 +34,7 @@ export default function NavBar() {
             className="text-2xl font-bold text-gray-900"
             title="Home"
           >
-            WalkTogether
+            Hoo Path
           </Link>
 
           {/* 2. 데스크탑 메뉴 */}
